@@ -5,7 +5,7 @@ import { resolve } from 'path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Aurafit-SIH2026/'
+  base: '/Aurafit-SIH2026/',
   resolve: {
     alias: {
       // @tensorflow-models/pose-detection statically imports @mediapipe/pose
