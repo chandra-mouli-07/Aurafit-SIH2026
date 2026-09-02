@@ -1,23 +1,13 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Aurafit-SIH2026/',
-  resolve: {
-    alias: {
-      // @tensorflow-models/pose-detection statically imports @mediapipe/pose
-      // for its BlazePose backend, but AuraFit only uses MoveNet — MediaPipe
-      // is never invoked at runtime. This alias points Rolldown to a stub so
-      // the build succeeds without the real (incompatible) mediapipe package.
-      '@mediapipe/pose': resolve('./src/stubs/mediapipe-pose.js'),
-    },
+  optimizeDeps: {
+    include: ['canvas-confetti']
   },
-  build: {
-    // TF.js bundles are large by design; suppress the size warning that
-    // would otherwise be a false alarm for this ML-dependent app.
-    chunkSizeWarningLimit: 3000,
-  },
-})
+  server: {
+    port: 3000,
+    open: true
+  }
+});
