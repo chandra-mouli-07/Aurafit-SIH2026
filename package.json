@@ -4,10 +4,19 @@
   "version": "1.0.0",
   "description": "AuraFit - AI-Powered Gamified Campus Fitness & Posture Corrector for SIH 2026",
   "type": "module",
+  "packageManager": "npm@10", 
   "scripts": {
     "dev": "vite",
+    "start": "npm run dev",
     "build": "vite build",
     "preview": "vite preview",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "format": "prettier --write .",
+    "test": "vitest",
+    "prepare": "husky install",
     "audit": "npm audit",
     "audit-fix": "npm audit fix"
   },
@@ -28,5 +37,23 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chandra-mouli-07/Aurafit-SIH2026.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chandra-mouli-07/Aurafit-SIH2026/issues"
+  },
+  "homepage": "https://github.com/chandra-mouli-07/Aurafit-SIH2026#readme",
+  "license": "MIT",
+  "author": "Your Name <you@example.com>",
+  "keywords": [
+    "react",
+    "vite",
+    "typescript",
+    "fitness",
+    "aurafit",
+    "SIH2026"
+  ]
 }
