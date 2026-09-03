@@ -1,23 +1,77 @@
+// vite.config.js
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
 import { resolve } from 'path'
+// optional: uncomment to support old browsers
+// import legacy from '@vitejs/plugin-legacy'
+// optional: uncomment to import SVGs as React components
+// import svgr from 'vite-plugin-svgr'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: '/Aurafit-SIH2026/',
-  resolve: {
-    alias: {
-      // @tensorflow-models/pose-detection statically imports @mediapipe/pose
-      // for its BlazePose backend, but AuraFit only uses MoveNet — MediaPipe
-      // is never invoked at runtime. This alias points Rolldown to a stub so
-      // the build succeeds without the real (incompatible) mediapipe package.
-      '@mediapipe/pose': resolve('./src/stubs/mediapipe-pose.js'),
+export default defineConfig(({ mode }) => {
+  // load .env, .env.local, .env.[mode], etc.
+  const env = loadEnv(mode, process.cwd(), '')
+
+  // Allow overriding base via VITE_BASE env var; otherwise use repo path on production
+  const isProd = mode === 'production'
+  const base = env.VITE_BASE || (isProd ? '/Aurafit-SIH2026/' : '/')
+
+  return {
+    plugins: [
+      react(),
+      // svgr(),
+      // legacy({
+      //   targets: ['defaults', 'not IE 11']
+      // })
+    ],
+    base,
+    resolve: {
+      alias: {
+        // Use "@/..." to import from src
+        '@': resolve(__dirname, 'src')
+      }
     },
-  },
-  build: {
-    // TF.js bundles are large by design; suppress the size warning that
-    // would otherwise be a false alarm for this ML-dependent app.
-    chunkSizeWarningLimit: 3000,
-  },
+    server: {
+      port: 5173,
+      open: true,
+      strictPort: false,
+      // Proxy API calls during development (example)
+      // proxy: {
+      //   '/api': {
+      //     target: 'http://localhost:3000',
+      //     changeOrigin: true,
+      //     rewrite: (p) => p.replace(/^\/api/, '')
+      //   }
+      // }
+    },
+    preview: {
+      port: 5174
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: !isProd, // generate sourcemaps for non-prod builds (useful for staging)
+      target: 'es2015',
+      assetsInlineLimit: 4096,
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          // Example manual chunking to improve caching for vendor libs
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react')) return 'vendor_react'
+              return 'vendor'
+            }
+          }
+        }
+      },
+      // reduce noisy warnings during CI
+      chunkSizeWarningLimit: 2000
+    },
+    optimizeDeps: {
+      // include: ['some-large-dep'], // pre-bundle if needed
+    },
+    define: {
+      // make sure process.env references don't crash; prefer import.meta.env in code
+      'process.env': {}
+    }
+  }
 })

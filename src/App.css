@@ -1,6 +1,0 @@
-/*
-  Bug 11 fix: The Vite scaffold boilerplate classes (.counter, .hero,
-  #next-steps, #spacer, .ticks) have been removed — none were used in any
-  component.  All component styling is applied via inline styles in JSX.
-  Add custom global styles here as the project grows.
-*/
