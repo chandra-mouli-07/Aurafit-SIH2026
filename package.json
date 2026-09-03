@@ -16,7 +16,7 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
     "format": "prettier --write .",
     "test": "vitest",
-    "prepare": "husky install",
+    "prepare": "husky install || true",
     "audit": "npm audit",
     "audit-fix": "npm audit fix"
   },
