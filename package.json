@@ -2,82 +2,32 @@
   "name": "aurafit-sih2026",
   "private": true,
   "version": "1.0.0",
-  "description": "AuraFit - AI-Powered Gamified Campus Fitness & Posture Corrector for SIH 2026",
   "type": "module",
-  "packageManager": "npm@10", 
   "scripts": {
     "dev": "vite",
-    "start": "npm run dev",
     "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
-    "format": "prettier --write .",
-    "test": "vitest",
-    "prepare": "husky install || true",
-    "audit": "npm audit",
-    "audit-fix": "npm audit fix"
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "@tailwindcss/postcss": "^4.3.3",
     "@tensorflow-models/pose-detection": "^2.1.3",
     "@tensorflow/tfjs": "^4.22.0",
-    "firebase": "^12.18.0",
-    "lucide-react": "^1.39.0",
-=======
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.18.0",
-    "lucide-react": "^1.16.0",
->>>>>>> c988a3074fb234ae46e0636452e4223a70d8f5dd
+    "lucide-react": "^1.39.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-<<<<<<< HEAD
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "autoprefixer": "^10.5.4",
-    "eslint": "^10.9.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.4",
-    "globals": "^17.11.0",
-    "postcss": "^8.5.26",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.2.2"
+    "@eslint/js": "^9.9.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "globals": "^15.9.0",
+    "vite": "^5.4.1"
   }
-=======
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.1.4",
-    "typescript": "^5.6.0",
-    "vite": "^7.3.1"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=10.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/chandra-mouli-07/Aurafit-SIH2026.git"
-  },
-  "bugs": {
-    "url": "https://github.com/chandra-mouli-07/Aurafit-SIH2026/issues"
-  },
-  "homepage": "https://github.com/chandra-mouli-07/Aurafit-SIH2026#readme",
-  "license": "MIT",
-  "author": "Your Name <you@example.com>",
-  "keywords": [
-    "react",
-    "vite",
-    "typescript",
-    "fitness",
-    "aurafit",
-    "SIH2026"
-  ]
->>>>>>> c988a3074fb234ae46e0636452e4223a70d8f5dd
 }
