@@ -122,7 +122,8 @@ export default function App() {
         squatCount: (prev.squatCount || 0) + repsGained
       };
     });
-
+const handlePointsEarned = (pointsGained, repsGained)=> {
+  setUserProfile(prev => { ...});
     setDeptLeaderboard(prev => {
       const userDept = userProfile?.department || 'CSE';
       return prev.map(d => {
