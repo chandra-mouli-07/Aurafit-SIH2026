@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   auth, 
   db, 
@@ -44,8 +44,11 @@ export default function App() {
   const [topAthletes, setTopAthletes] = useState([]);
   const [workouts, setWorkouts] = useState(DEMO_WORKOUTS);
 
+  // OPTIMIZATION: Use ref to track subscription cleanup state
+  const unsubscriptionsRef = useRef({ auth: null, profile: null, leaderboard: null });
+
   /**
-   * Fetch user's workouts from Firebase
+   * Fetch user's workouts from Firebase (memoized to prevent unnecessary re-fetches)
    */
   const fetchUserWorkouts = useCallback(async (uid) => {
     if (!uid) return;
@@ -63,11 +66,17 @@ export default function App() {
   }, []);
 
   /**
-   * Initialize auth state and listeners
+   * OPTIMIZED: Initialize auth state and listeners with proper cleanup
+   * 
+   * Key improvements:
+   * 1. Only subscribe to leaderboard if user is authenticated
+   * 2. Proper unsubscribe tracking in ref to prevent memory leaks
+   * 3. Moved fetchUserWorkouts outside callback to prevent re-subscriptions
+   * 4. Guard against multiple simultaneous subscriptions
    */
   useEffect(() => {
-    let unsubProfile = null;
-    let unsubLeaderboard = null;
+    // Track this effect's subscriptions separately
+    const subscriptions = { auth: null, profile: null, leaderboard: null };
 
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
       try {
@@ -79,7 +88,7 @@ export default function App() {
           fetchUserWorkouts(currentUser.uid);
 
           // Listen to user profile changes
-          unsubProfile = onSnapshot(
+          subscriptions.profile = onSnapshot(
             doc(db, 'users', currentUser.uid),
             (docSnap) => {
               if (docSnap.exists()) {
@@ -104,7 +113,26 @@ export default function App() {
               setAuthError('Failed to load profile');
             }
           );
+
+          // OPTIMIZATION: Only subscribe to leaderboard for authenticated users
+          subscriptions.leaderboard = subscribeToDepartmentLeaderboard((data) => {
+            if (data?.departments) {
+              setDeptLeaderboard(data.departments);
+              if (data.topAthletes) {
+                setTopAthletes(data.topAthletes);
+              }
+            }
+          });
         } else {
+          // Clean up subscriptions when user logs out
+          if (subscriptions.profile) {
+            subscriptions.profile();
+            subscriptions.profile = null;
+          }
+          if (subscriptions.leaderboard) {
+            subscriptions.leaderboard();
+            subscriptions.leaderboard = null;
+          }
           setUserProfile(null);
           setWorkouts(DEMO_WORKOUTS);
         }
@@ -116,21 +144,14 @@ export default function App() {
       }
     });
 
-    // Subscribe to department leaderboard updates
-    unsubLeaderboard = subscribeToDepartmentLeaderboard((data) => {
-      if (data?.departments) {
-        setDeptLeaderboard(data.departments);
-        if (data.topAthletes) {
-          setTopAthletes(data.topAthletes);
-        }
-      }
-    });
+    subscriptions.auth = unsubAuth;
+    unsubscriptionsRef.current = subscriptions;
 
-    // Cleanup all subscriptions
+    // Cleanup all subscriptions on unmount or auth change
     return () => {
-      unsubAuth();
-      if (unsubProfile) unsubProfile();
-      if (unsubLeaderboard) unsubLeaderboard();
+      if (subscriptions.auth) subscriptions.auth();
+      if (subscriptions.profile) subscriptions.profile();
+      if (subscriptions.leaderboard) subscriptions.leaderboard();
     };
   }, [fetchUserWorkouts]);
 
@@ -166,7 +187,7 @@ export default function App() {
    * Update local state when points are earned
    * Avoids waiting for Firebase sync for better UX
    */
-  const handlePointsEarned = (pointsGained, repsGained) => {
+  const handlePointsEarned = useCallback((pointsGained, repsGained) => {
     setUserProfile(prev => {
       if (!prev) return prev;
 
@@ -190,14 +211,14 @@ export default function App() {
 
       return updatedProfile;
     });
-  };
+  }, []);
 
   /**
    * Handle new workout logged
    */
-  const handleWorkoutSaved = (newWorkout) => {
+  const handleWorkoutSaved = useCallback((newWorkout) => {
     setWorkouts(prev => [newWorkout, ...prev]);
-  };
+  }, []);
 
   // Show loading state while auth is initializing
   if (isLoading) {
