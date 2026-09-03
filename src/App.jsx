@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   auth, 
   db, 
@@ -17,6 +17,7 @@ import { ToastProvider } from './components/ToastContext';
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const userProfileRef = useRef(null);
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -122,15 +123,12 @@ export default function App() {
         squatCount: (prev.squatCount || 0) + repsGained
       };
     });
-const handlePointsEarned = (pointsGained, repsGained)=> {
-  setUserProfile(prev => { ...});
     setDeptLeaderboard(prev => {
       const userDept = userProfile?.department || 'CSE';
       return prev.map(d => {
-        if (d.department === userDept) {
-          return { ...d, points: d.points + pointsGained };
-        }
-        return d;
+      d.department === userDept 
+         { ...d, points: d.points + pointsGained }
+        : d;
       }).sort((a, b) => b.points - a.points);
     });
   };
