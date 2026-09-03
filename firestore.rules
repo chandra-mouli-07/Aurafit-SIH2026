@@ -2,54 +2,114 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isString(v) { return v is string; }
+    function isInt(v) { return v is int; }
+
     // -------------------------------------------------------------------------
-    // users/{uid}
-    //   - Any authenticated user can READ all profiles (needed for leaderboard)
-    //   - Only the owner can WRITE their own profile
+    // users/{userId}
+    // - Only owner may create/update their profile
+    // - Require/validate core fields on create
+    // - Allow read to authenticated users (used for leaderboard); consider a
+    //   separate public_profiles collection if you need field-level read control
     // -------------------------------------------------------------------------
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(userId)
+                    // basic shape validation
+                    && request.resource.data.displayName is string
+                    && (request.resource.data.photoUrl == null || request.resource.data.photoUrl is string)
+                    // createdAt must be set by client/server to request.time
+                    && request.resource.data.createdAt == request.time;
+
+      allow update: if isOwner(userId)
+                    // prevent changing owner id and enforce types on common fields
+                    && (request.resource.data.userId == null || request.resource.data.userId == resource.data.userId)
+                    && (request.resource.data.displayName == null || request.resource.data.displayName is string)
+                    && (request.resource.data.photoUrl == null || request.resource.data.photoUrl is string)
+                    // optional: enforce an updatedAt stamp
+                    && (request.resource.data.updatedAt == null || request.resource.data.updatedAt == request.time);
+
+      // consider disallowing deletes or only allowing them after additional checks
+      allow delete: if false;
     }
 
     // -------------------------------------------------------------------------
     // workouts/{workoutId}
-    //   - Authenticated users can CREATE a workout for themselves only
-    //   - READ is restricted to the document owner (userId field matches auth uid)
+    // - Only authenticated users can create workouts for themselves
+    // - Owner can read/update/delete their workouts; validate fields on create
     // -------------------------------------------------------------------------
     match /workouts/{workoutId} {
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
-      allow read:   if request.auth != null
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.title is string
+                    && (request.resource.data.duration == null || request.resource.data.duration is int)
+                    && request.resource.data.createdAt == request.time;
+
+      // owner-only read (private workouts). If you want public workouts, loosen this.
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+
+      // allow owner to update (but ensure userId can't be changed)
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == resource.data.userId);
+
+      allow delete: if isSignedIn()
                     && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
     }
 
     // -------------------------------------------------------------------------
     // daily_logs/{userId}/entries/{date}
-    //   - Strictly private: only the owner can read/write their own daily log
+    // - Strictly private; only the owner can read/write
+    // - Validate date format (YYYY-MM-DD) to avoid accidental bad IDs
     // -------------------------------------------------------------------------
     match /daily_logs/{userId}/entries/{date} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+      allow read, write: if isOwner(userId)
+                         // validate date segment is ISO date (simple regex)
+                         && date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+                         // Optional: ensure the document references the same userId
+                         && (request.resource == null || request.resource.data.userId == userId);
     }
 
     // -------------------------------------------------------------------------
     // buddy_requests/{requestId}
-    //   - Authenticated users can CREATE a request (fromUid must match their uid)
-    //   - READ restricted to requests you sent (fromUid)
+    // - Users can create outgoing requests (fromUid == auth.uid, toUid required)
+    // - Both sender and receiver can read the request
+    // - Receiver (toUid) can change status from 'pending' -> 'accepted'|'rejected'
+    // - Prevent tampering with fromUid/toUid after creation
     // -------------------------------------------------------------------------
     match /buddy_requests/{requestId} {
-      allow create: if request.auth != null
+      allow create: if isSignedIn()
                     && request.resource.data.fromUid == request.auth.uid
-                    && request.resource.data.status == 'pending';
-      allow read:   if request.auth != null
-                    && resource.data.fromUid == request.auth.uid;
-      allow update, delete: if false;
+                    && request.resource.data.toUid is string
+                    && request.resource.data.fromUid != request.resource.data.toUid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time;
+
+      allow read: if isSignedIn()
+                  && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+
+      allow update: if isSignedIn()
+                    // require an existing resource for update checks
+                    && resource.data != null
+                    // only allow the recipient to approve/reject
+                    && request.auth.uid == resource.data.toUid
+                    // only allow status transitions from pending to accepted|rejected
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status in ['accepted', 'rejected']
+                    // don't allow changing who sent/received the request
+                    && request.resource.data.fromUid == resource.data.fromUid
+                    && request.resource.data.toUid == resource.data.toUid;
+
+      allow delete: if false;
     }
 
     // -------------------------------------------------------------------------
-    // Deny all other paths by default
+    // Deny everything else
     // -------------------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
